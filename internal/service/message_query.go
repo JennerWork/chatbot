@@ -77,7 +77,7 @@ func (s *messageQueryService) GetMessageHistory(params MessageQueryParams) (*Mes
 
 	// 获取消息列表
 	var messages []model.Message
-	if err := query.Order("created_at desc").
+	if err := query.Order("session_id asc, seq asc").
 		Offset(offset).
 		Limit(params.PageSize).
 		Find(&messages).Error; err != nil {
