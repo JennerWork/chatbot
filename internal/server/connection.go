@@ -1,6 +1,7 @@
 package server
 
 import (
+	"log"
 	"sync"
 	"time"
 
@@ -19,10 +20,24 @@ type ConnectionManager struct {
 
 // NewConnectionManager 创建新的连接管理器
 func NewConnectionManager(db *gorm.DB) *ConnectionManager {
-	return &ConnectionManager{
+	cm := &ConnectionManager{
 		connections: make(map[string]*Client),
 		sessions:    make(map[uint]*Client),
 		db:          db,
+	}
+
+	// 启动定期清理协程
+	go cm.startCleanupLoop()
+	return cm
+}
+
+// startCleanupLoop 启动定期清理循环
+func (cm *ConnectionManager) startCleanupLoop() {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		cm.CleanInactiveConnections(30 * time.Minute)
 	}
 }
 
@@ -44,11 +59,19 @@ func (cm *ConnectionManager) Register(client *Client) {
 			if oldClient.session != nil {
 				oldClient.session.Status = string(model.SessionStatusCancelled)
 				cm.db.Save(oldClient.session)
+				log.Printf("Session cancelled for customer %d (replaced by new connection)", oldClient.customerID)
 			}
 			close(oldClient.send)
 			delete(cm.connections, oldClient.id)
 		}
 		cm.sessions[client.customerID] = client
+	}
+
+	// 更新新会话状态为活跃
+	if client.session != nil {
+		client.session.Status = string(model.SessionStatusActive)
+		cm.db.Save(client.session)
+		log.Printf("Session activated for customer %d", client.customerID)
 	}
 }
 
@@ -61,6 +84,7 @@ func (cm *ConnectionManager) Unregister(client *Client) {
 	if client.session != nil {
 		client.session.Status = string(model.SessionStatusCancelled)
 		cm.db.Save(client.session)
+		log.Printf("Session cancelled for customer %d (unregistered)", client.customerID)
 	}
 
 	if client.customerID > 0 {
@@ -100,12 +124,19 @@ func (cm *ConnectionManager) CleanInactiveConnections(inactiveTimeout time.Durat
 	now := time.Now()
 	for _, client := range cm.connections {
 		if now.Sub(client.lastActivity) > inactiveTimeout {
-			// 更新会话状态为超时
+			log.Printf("Closing inactive connection for customer %d, last activity: %v",
+				client.customerID, client.lastActivity)
+
+			// 更新会话状态为不活跃
 			if client.session != nil {
-				client.session.Status = string(model.SessionStatusTimedOut)
+				client.session.Status = string(model.SessionStatusInactive)
 				cm.db.Save(client.session)
+				log.Printf("Session marked as inactive for customer %d (timeout after %v)",
+					client.customerID, inactiveTimeout)
 			}
-			close(client.send)
+
+			// 关闭连接
+			client.conn.Close()
 			delete(cm.connections, client.id)
 			if client.customerID > 0 {
 				delete(cm.sessions, client.customerID)

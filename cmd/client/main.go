@@ -61,7 +61,7 @@ func main() {
 	} else {
 		fmt.Println("\nRecent messages:")
 		for _, msg := range result.Messages {
-			fmt.Printf("[%s] %s: %s\n", msg.CreatedAt.Format("2006-01-02 15:04:05"), msg.Sender, msg.Content)
+			fmt.Printf("[%s] %s: %s\n", msg.CreatedAt.String(), msg.Sender, msg.Content)
 		}
 		fmt.Println()
 	}
@@ -142,7 +142,7 @@ func main() {
 				} else {
 					fmt.Println("\nRecent messages:")
 					for _, msg := range result.Messages {
-						fmt.Printf("[%s] %s: %s\n", msg.CreatedAt.Format("2006-01-02 15:04:05"), msg.Sender, msg.Content)
+						fmt.Printf("[%s] %s: %s\n", msg.CreatedAt.String(), msg.Sender, msg.Content)
 					}
 				}
 			default:

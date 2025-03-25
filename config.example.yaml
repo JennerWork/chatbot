@@ -1,0 +1,12 @@
+database:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: your_password
+  dbname: chatbot
+  sslmode: disable
+
+app:
+  name: chatbot
+  mode: development
+  port: 8080 

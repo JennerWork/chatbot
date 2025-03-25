@@ -7,6 +7,30 @@ import (
 	"time"
 )
 
+type Time time.Time
+
+const (
+	timeFormart = "2006-01-02 15:04:05"
+)
+
+func (t *Time) UnmarshalJSON(data []byte) (err error) {
+	now, err := time.ParseInLocation(`"`+timeFormart+`"`, string(data), time.Local)
+	*t = Time(now)
+	return
+}
+
+func (t Time) MarshalJSON() ([]byte, error) {
+	b := make([]byte, 0, len(timeFormart)+2)
+	b = append(b, '"')
+	b = time.Time(t).AppendFormat(b, timeFormart)
+	b = append(b, '"')
+	return b, nil
+}
+
+func (t Time) String() string {
+	return time.Time(t).Format(timeFormart)
+}
+
 // Message 消息结构
 type Message struct {
 	ID        uint            `json:"id"`
@@ -16,7 +40,7 @@ type Message struct {
 	Seq       uint            `json:"seq"`
 	SessionID uint            `json:"session_id"`
 	Extra     json.RawMessage `json:"extra,omitempty"`
-	CreatedAt time.Time       `json:"created_at"`
+	CreatedAt Time            `json:"created_at"`
 }
 
 // MessageQueryParams 消息查询参数
