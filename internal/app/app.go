@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/JennerWork/chatbot/internal/config"
+	"github.com/JennerWork/chatbot/internal/handler"
 	"github.com/JennerWork/chatbot/internal/server"
 	"github.com/JennerWork/chatbot/internal/service"
 	"github.com/JennerWork/chatbot/pkg/db"
@@ -36,7 +37,7 @@ func Run(configPath string) error {
 	cm := server.NewConnectionManager(dbConn)
 
 	// 创建消息处理器
-	handlers := createMessageHandlers(msgService)
+	handlers := handler.NewWebSocketHandler(msgService)
 
 	// 创建HTTP服务器
 	srv := server.NewServer()
@@ -76,19 +77,4 @@ func Run(configPath string) error {
 
 	log.Println("Server exiting")
 	return nil
-}
-
-// createMessageHandlers 创建消息处理器
-type chatbotHandler struct {
-	messageService service.MessageService
-}
-
-func (h *chatbotHandler) HandleMessage(customerID uint, message []byte) ([]byte, error) {
-	return h.messageService.HandleMessage(customerID, message)
-}
-
-func createMessageHandlers(msgService service.MessageService) server.MessageHandlers {
-	return &chatbotHandler{
-		messageService: msgService,
-	}
 }

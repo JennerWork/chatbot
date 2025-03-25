@@ -145,7 +145,11 @@ func (c *Client) readPump() {
 
 // getCustomerIDFromRequest 从请求中获取客户ID
 func getCustomerIDFromRequest(r *http.Request) uint {
-	// TODO: 实现从请求中获取客户ID的逻辑
-	// 可以从cookie、header或query参数中获取
+	// 从gin的Context中获取customerID
+	if ctx := r.Context(); ctx != nil {
+		if customerID, ok := ctx.Value("customer_id").(uint); ok {
+			return customerID
+		}
+	}
 	return 0
 }

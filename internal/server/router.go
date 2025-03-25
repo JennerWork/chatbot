@@ -16,6 +16,8 @@ func (s *Server) SetupRoutes(db *gorm.DB, handlers MessageHandlers, cm *Connecti
 	// 创建服务实例
 	messageQueryService := service.NewMessageQueryService(db)
 	messageHandler := handler.NewMessageHandler(messageQueryService)
+	customerService := service.NewCustomerService(db)
+	customerHandler := handler.NewCustomerHandler(customerService)
 
 	// 创建认证服务
 	jwtConfig := service.JWTConfig{
@@ -49,6 +51,20 @@ func (s *Server) SetupRoutes(db *gorm.DB, handlers MessageHandlers, cm *Connecti
 		{
 			auth.POST("/login", handler.Login(authService))
 			auth.POST("/refresh", handler.RefreshToken(authService))
+		}
+
+		// 客户相关路由
+		customers := api.Group("/customers")
+		{
+			// 无需认证的路由
+			customers.POST("/register", customerHandler.Register)
+
+			// 需要认证的路由
+			authenticated := customers.Use(authMiddleware)
+			{
+				authenticated.PUT("/password", customerHandler.UpdatePassword)
+				authenticated.PUT("/profile", customerHandler.UpdateProfile)
+			}
 		}
 
 		// 需要认证的路由组

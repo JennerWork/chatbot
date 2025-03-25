@@ -56,17 +56,17 @@ func NewAuthService(db *gorm.DB, config JWTConfig) AuthService {
 // Login 登录实现
 func (s *authService) Login(email, password string) (string, error) {
 	var customer model.Customer
-	if err := s.db.Where("email = ?", email).First(&customer).Error; err != nil {
+	if err := s.db.Where("email = ? AND status = ?", email, "active").First(&customer).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return "", ErrInvalidCredentials
 		}
 		return "", err
 	}
 
-	// TODO: 实现密码验证
-	// if !customer.ValidatePassword(password) {
-	//     return "", ErrInvalidCredentials
-	// }
+	// 验证密码
+	if !customer.ValidatePassword(password) {
+		return "", ErrInvalidCredentials
+	}
 
 	// 生成token
 	return s.generateToken(customer)
