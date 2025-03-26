@@ -20,7 +20,7 @@ The project follows a client-server architecture with the following components:
 - **Routing and Middleware**: Manages API endpoints and applies middleware for tasks like authentication and logging.
 
 ### Database
-- **Relational or NoSQL**: Stores user data, messages, and possibly configuration settings.
+- **Postgres**: Stores user data, messages, and possibly configuration settings.
 - **Session Management**: Tracks active WebSocket sessions and user activity.
 
 ## Features
@@ -33,7 +33,7 @@ The project follows a client-server architecture with the following components:
 
 ### Prerequisites
 - Go 1.16 or later
-- A running instance of a database (e.g., PostgreSQL, MySQL)
+- A running instance of a PostgreSQL
 
 ### Installation
 1. Clone the repository:
@@ -58,6 +58,10 @@ The project follows a client-server architecture with the following components:
 - **Client**: Start the client by running:
   ```bash
   ./chatclient -email="user@example.com" -password="yourpassword"
+  ```
+- **Register a New User**: To register a new user, run:
+  ```bash
+  ./chatclient -register -email="newuser@example.com" -password="newpassword" -name="New User"
   ```
 
 ## Contributing
