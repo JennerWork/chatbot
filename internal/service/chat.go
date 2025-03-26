@@ -8,14 +8,14 @@ import (
 	"gorm.io/gorm"
 )
 
-// TextMessage 文本消息的具体内容
+// TextMessage represents the content of a text message
 type TextMessage struct {
 	Text string `json:"text"`
 }
 
-// ChatService 处理聊天相关的业务逻辑
+// ChatService handles the business logic related to chat
 type ChatService interface {
-	// ProcessText 处理文本消息并返回回复
+	// ProcessText processes a text message and returns a reply
 	ProcessText(customerID uint, sessionID uint, text string) (string, error)
 }
 
@@ -23,22 +23,22 @@ type chatService struct {
 	db *gorm.DB
 }
 
-// NewChatService 创建聊天服务实例
+// NewChatService creates an instance of the chat service
 func NewChatService(db *gorm.DB) ChatService {
 	return &chatService{
 		db: db,
 	}
 }
 
-// ProcessText 处理文本消息
+// ProcessText processes a text message
 func (s *chatService) ProcessText(customerID uint, sessionID uint, text string) (string, error) {
-	// 1. 获取当前会话的上下文
+	// 1. Retrieve the context of the current session
 	var session model.Session
 	if err := s.db.First(&session, sessionID).Error; err != nil {
-		return "", fmt.Errorf("获取会话失败: %v", err)
+		return "", fmt.Errorf("failed to retrieve session: %v", err)
 	}
 
-	// 2. 检查是否有未完成的反馈
+	// 2. Check for any pending feedback
 	var feedback model.Feedback
 	result := s.db.Where("customer_id = ? AND status != ?",
 		customerID, model.FeedbackStatusCompleted).
@@ -46,28 +46,28 @@ func (s *chatService) ProcessText(customerID uint, sessionID uint, text string) 
 	hasPendingFeedback := result.Error == nil
 
 	if hasPendingFeedback {
-		// 处理反馈流程中的回复
+		// Process replies during the feedback process
 		return s.handleFeedbackResponse(text, &feedback)
 	}
 
-	// 3. 检查是否是反馈触发词
+	// 3. Check if the message is a feedback trigger
 	if s.isFeedbackTrigger(text) {
 		return s.initiateFeedback(customerID, sessionID)
 	}
 
-	// 4. 获取会话历史消息，用于上下文理解
+	// 4. Retrieve recent session messages for context understanding
 	var recentMessages []model.Message
 	if err := s.db.Where("session_id = ?", sessionID).
 		Order("created_at desc").
 		Find(&recentMessages).Error; err != nil {
-		return "", fmt.Errorf("获取历史消息失败: %v", err)
+		return "", fmt.Errorf("failed to retrieve historical messages: %v", err)
 	}
 
-	// 5. 生成普通回复
+	// 5. Generate a basic reply
 	return s.generateBasicReply(text, recentMessages), nil
 }
 
-// isFeedbackTrigger 检查是否是反馈触发词
+// isFeedbackTrigger checks if the message is a feedback trigger
 func (s *chatService) isFeedbackTrigger(text string) bool {
 	triggers := []string{"feedback", "review", "评价", "反馈", "评论"}
 	text = strings.ToLower(text)
@@ -79,9 +79,9 @@ func (s *chatService) isFeedbackTrigger(text string) bool {
 	return false
 }
 
-// initiateFeedback 初始化反馈流程
+// initiateFeedback initializes the feedback process
 func (s *chatService) initiateFeedback(customerID uint, sessionID uint) (string, error) {
-	// 创建新的反馈记录
+	// Create a new feedback record
 	feedback := model.Feedback{
 		CustomerID: customerID,
 		SessionID:  sessionID,
@@ -89,49 +89,49 @@ func (s *chatService) initiateFeedback(customerID uint, sessionID uint) (string,
 	}
 
 	if err := s.db.Create(&feedback).Error; err != nil {
-		return "", fmt.Errorf("创建反馈记录失败: %v", err)
+		return "", fmt.Errorf("failed to create feedback record: %v", err)
 	}
 
-	return "请对本次服务进行评分（1-5分），5分表示非常满意，1分表示非常不满意", nil
+	return "Please rate this service on a scale of 1-5, with 5 being very satisfied and 1 being very dissatisfied.", nil
 }
 
-// handleFeedbackResponse 处理反馈流程中的回复
+// handleFeedbackResponse processes replies during the feedback process
 func (s *chatService) handleFeedbackResponse(text string, feedback *model.Feedback) (string, error) {
 	switch feedback.Status {
 	case model.FeedbackStatusInitiated:
-		// 处理评分
+		// Process rating
 		rating, err := s.parseRating(text)
 		if err != nil {
-			return "请输入1-5之间的数字进行评分", nil
+			return "Please enter a number between 1 and 5 to rate.", nil
 		}
 
 		feedback.Rating = rating
 		feedback.Status = model.FeedbackStatusRatingProvided
 		if err := s.db.Save(feedback).Error; err != nil {
-			return "", fmt.Errorf("保存评分失败: %v", err)
+			return "", fmt.Errorf("failed to save rating: %v", err)
 		}
 
-		return "感谢您的评分！请问您对我们的服务有什么建议或意见吗？", nil
+		return "Thank you for your rating! Do you have any suggestions or comments about our service?", nil
 
 	case model.FeedbackStatusRatingProvided:
-		// 处理评论
+		// Process comments
 		sentimentService := NewSentimentAnalysisService()
 		sentiment := sentimentService.AnalyzeSentiment(text, int(feedback.Rating))
 		feedback.Comment = text
 		feedback.Sentiment = sentiment
 		feedback.Status = model.FeedbackStatusCompleted
 		if err := s.db.Save(feedback).Error; err != nil {
-			return "", fmt.Errorf("保存评论失败: %v", err)
+			return "", fmt.Errorf("failed to save comment: %v", err)
 		}
 
-		return "非常感谢您的反馈！我们会继续努力提供更好的服务。", nil
+		return "Thank you very much for your feedback! We will continue to strive to provide better service.", nil
 
 	default:
 		return s.generateBasicReply(text, nil), nil
 	}
 }
 
-// parseRating 解析评分
+// parseRating parses the rating
 func (s *chatService) parseRating(text string) (model.FeedbackRating, error) {
 	text = strings.TrimSpace(text)
 	switch text {
@@ -146,17 +146,17 @@ func (s *chatService) parseRating(text string) (model.FeedbackRating, error) {
 	case "5":
 		return model.FeedbackRating5, nil
 	default:
-		return 0, fmt.Errorf("无效的评分")
+		return 0, fmt.Errorf("invalid rating")
 	}
 }
 
-// generateBasicReply 生成基础回复
+// generateBasicReply generates a basic reply
 func (s *chatService) generateBasicReply(text string, context []model.Message) string {
-	// TODO: 实现更复杂的回复生成逻辑
-	// 1. 可以接入OpenAI等AI服务
-	// 2. 可以实现关键词匹配
-	// 3. 可以实现意图识别
-	// 4. 可以实现多轮对话管理
+	// TODO: Implement more complex reply generation logic
+	// 1. Integrate with AI services like OpenAI
+	// 2. Implement keyword matching
+	// 3. Implement intent recognition
+	// 4. Implement multi-turn conversation management
 
-	return fmt.Sprintf("我收到了您的消息：%s\n如果您对服务满意，可以输入'feedback'进行评价。", text)
+	return fmt.Sprintf("I have received your message: %s\nIf you are satisfied with the service, you can enter 'feedback' to provide a review.", text)
 }
