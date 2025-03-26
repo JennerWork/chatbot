@@ -115,7 +115,10 @@ func (s *chatService) handleFeedbackResponse(text string, feedback *model.Feedba
 
 	case model.FeedbackStatusRatingProvided:
 		// 处理评论
+		sentimentService := NewSentimentAnalysisService()
+		sentiment := sentimentService.AnalyzeSentiment(text, int(feedback.Rating))
 		feedback.Comment = text
+		feedback.Sentiment = sentiment
 		feedback.Status = model.FeedbackStatusCompleted
 		if err := s.db.Save(feedback).Error; err != nil {
 			return "", fmt.Errorf("保存评论失败: %v", err)

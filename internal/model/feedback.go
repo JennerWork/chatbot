@@ -13,6 +13,7 @@ type Feedback struct {
 	SessionID  uint           `json:"session_id"`
 	Session    Session        `json:"session"`
 	Comment    string         `json:"comment"`
+	Sentiment  string         `json:"sentiment"`
 }
 
 type FeedbackRating int
