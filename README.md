@@ -23,6 +23,44 @@ The project follows a client-server architecture with the following components:
 - **Postgres**: Stores user data, messages, and possibly configuration settings.
 - **Session Management**: Tracks active WebSocket sessions and user activity.
 
+## Communication Flow Diagram
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Server
+    participant Database
+
+    Client->>Server: Register (email, password, name)
+    Server->>Database: Create user record
+    Database-->>Server: User created
+    Server-->>Client: Registration successful
+
+    Client->>Server: Login (email, password)
+    Server->>Database: Validate user credentials
+    Database-->>Server: Credentials valid
+    Server-->>Client: Login successful, JWT token
+
+    Client->>Server: Connect via WebSocket
+    Server-->>Client: WebSocket connection established
+
+    Client->>Server: Send message
+    Server->>Database: Store message
+    Server-->>Client: Message sent confirmation
+
+    Client->>Server: Request message history
+    Server->>Database: Retrieve messages
+    Database-->>Server: Messages retrieved
+    Server-->>Client: Send message history
+
+    Client->>Server: Provide feedback
+    Server->>Database: Store feedback
+    Server-->>Client: Feedback received, thank you
+
+    Client->>Server: Disconnect WebSocket
+    Server-->>Client: WebSocket connection closed
+```
+
 ## Features
 - **User Authentication**: Secure login and registration using JWT.
 - **Real-Time Messaging**: Low-latency communication using WebSocket.
