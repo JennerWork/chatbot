@@ -8,43 +8,43 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RegisterRequest 注册请求参数
+// RegisterRequest registration request parameters
 type RegisterRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6"`
 	Name     string `json:"name" binding:"required,min=2,max=50"`
 }
 
-// UpdatePasswordRequest 更新密码请求参数
+// UpdatePasswordRequest update password request parameters
 type UpdatePasswordRequest struct {
 	OldPassword string `json:"old_password" binding:"required"`
 	NewPassword string `json:"new_password" binding:"required,min=6"`
 }
 
-// UpdateProfileRequest 更新资料请求参数
+// UpdateProfileRequest update profile request parameters
 type UpdateProfileRequest struct {
 	Name string `json:"name" binding:"required,min=2,max=50"`
 }
 
-// CustomerHandler 客户相关的处理器
+// CustomerHandler customer-related handler
 type CustomerHandler struct {
 	customerService service.CustomerService
 }
 
-// NewCustomerHandler 创建客户处理器
+// NewCustomerHandler create a customer handler
 func NewCustomerHandler(customerService service.CustomerService) *CustomerHandler {
 	return &CustomerHandler{
 		customerService: customerService,
 	}
 }
 
-// Register 处理客户注册
-// @Summary 客户注册
-// @Description 注册新客户账号
+// Register handle customer registration
+// @Summary Customer Registration
+// @Description Register a new customer account
 // @Tags customers
 // @Accept json
 // @Produce json
-// @Param request body RegisterRequest true "注册信息"
+// @Param request body RegisterRequest true "Registration Information"
 // @Success 200 {object} model.Customer
 // @Failure 400 {object} ErrorResponse
 // @Failure 500 {object} ErrorResponse
@@ -54,7 +54,7 @@ func (h *CustomerHandler) Register(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Code:    400,
-			Message: "无效的请求参数",
+			Message: "Invalid request parameters",
 			Error:   err.Error(),
 		})
 		return
@@ -63,11 +63,11 @@ func (h *CustomerHandler) Register(c *gin.Context) {
 	customer, err := h.customerService.Register(req.Email, req.Password, req.Name)
 	if err != nil {
 		status := http.StatusInternalServerError
-		message := "注册失败"
+		message := "Registration failed"
 
 		if err == service.ErrEmailExists {
 			status = http.StatusBadRequest
-			message = "邮箱已被注册"
+			message = "Email already registered"
 		}
 
 		c.JSON(status, ErrorResponse{
@@ -81,13 +81,13 @@ func (h *CustomerHandler) Register(c *gin.Context) {
 	c.JSON(http.StatusOK, customer)
 }
 
-// UpdatePassword 处理密码更新
-// @Summary 更新密码
-// @Description 更新当前登录用户的密码
+// UpdatePassword handle password update
+// @Summary Update Password
+// @Description Update the password of the currently logged-in user
 // @Tags customers
 // @Accept json
 // @Produce json
-// @Param request body UpdatePasswordRequest true "密码更新信息"
+// @Param request body UpdatePasswordRequest true "Password Update Information"
 // @Success 200 {object} gin.H
 // @Failure 400 {object} ErrorResponse
 // @Failure 401 {object} ErrorResponse
@@ -98,7 +98,7 @@ func (h *CustomerHandler) UpdatePassword(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Code:    400,
-			Message: "无效的请求参数",
+			Message: "Invalid request parameters",
 			Error:   err.Error(),
 		})
 		return
@@ -108,18 +108,18 @@ func (h *CustomerHandler) UpdatePassword(c *gin.Context) {
 	if customerID == 0 {
 		c.JSON(http.StatusUnauthorized, ErrorResponse{
 			Code:    401,
-			Message: "未认证的用户",
+			Message: "Unauthorized user",
 		})
 		return
 	}
 
 	if err := h.customerService.UpdatePassword(customerID, req.OldPassword, req.NewPassword); err != nil {
 		status := http.StatusInternalServerError
-		message := "更新密码失败"
+		message := "Failed to update password"
 
 		if err == service.ErrInvalidCredentials {
 			status = http.StatusBadRequest
-			message = "原密码错误"
+			message = "Incorrect original password"
 		}
 
 		c.JSON(status, ErrorResponse{
@@ -131,17 +131,17 @@ func (h *CustomerHandler) UpdatePassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "密码更新成功",
+		"message": "Password updated successfully",
 	})
 }
 
-// UpdateProfile 处理资料更新
-// @Summary 更新资料
-// @Description 更新当前登录用户的资料
+// UpdateProfile handle profile update
+// @Summary Update Profile
+// @Description Update the profile of the currently logged-in user
 // @Tags customers
 // @Accept json
 // @Produce json
-// @Param request body UpdateProfileRequest true "资料更新信息"
+// @Param request body UpdateProfileRequest true "Profile Update Information"
 // @Success 200 {object} gin.H
 // @Failure 400 {object} ErrorResponse
 // @Failure 401 {object} ErrorResponse
@@ -152,7 +152,7 @@ func (h *CustomerHandler) UpdateProfile(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Code:    400,
-			Message: "无效的请求参数",
+			Message: "Invalid request parameters",
 			Error:   err.Error(),
 		})
 		return
@@ -162,7 +162,7 @@ func (h *CustomerHandler) UpdateProfile(c *gin.Context) {
 	if customerID == 0 {
 		c.JSON(http.StatusUnauthorized, ErrorResponse{
 			Code:    401,
-			Message: "未认证的用户",
+			Message: "Unauthorized user",
 		})
 		return
 	}
@@ -170,13 +170,13 @@ func (h *CustomerHandler) UpdateProfile(c *gin.Context) {
 	if err := h.customerService.UpdateProfile(customerID, req.Name); err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Code:    500,
-			Message: "更新资料失败",
+			Message: "Failed to update profile",
 			Error:   err.Error(),
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "资料更新成功",
+		"message": "Profile updated successfully",
 	})
 }

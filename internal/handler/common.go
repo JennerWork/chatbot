@@ -1,6 +1,6 @@
 package handler
 
-// ErrorResponse 错误响应
+// ErrorResponse error response
 type ErrorResponse struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`

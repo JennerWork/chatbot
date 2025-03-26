@@ -7,30 +7,30 @@ import (
 )
 
 var (
-	// ErrInvalidMessage 无效的消息
+	// ErrInvalidMessage invalid message
 	ErrInvalidMessage = errors.New("无效的消息")
 )
 
-// WebSocketHandler WebSocket消息处理器
+// WebSocketHandler WebSocket message handler
 type WebSocketHandler struct {
 	messageService service.MessageService
 }
 
-// NewWebSocketHandler 创建WebSocket消息处理器
+// NewWebSocketHandler create WebSocket message handler
 func NewWebSocketHandler(messageService service.MessageService) *WebSocketHandler {
 	return &WebSocketHandler{
 		messageService: messageService,
 	}
 }
 
-// HandleMessage 处理WebSocket消息
+// HandleMessage handle WebSocket message
 func (h *WebSocketHandler) HandleMessage(customerID uint, message []byte) ([]byte, error) {
-	// TODO: 添加消息验证
+	// TODO: Add message validation
 	if len(message) == 0 {
 		return nil, ErrInvalidMessage
 	}
 
-	// TODO: 添加消息处理前的钩子函数
+	// TODO: Add pre-message processing hooks
 
 	// 处理消息
 	response, err := h.messageService.HandleMessage(customerID, message)
@@ -38,7 +38,7 @@ func (h *WebSocketHandler) HandleMessage(customerID uint, message []byte) ([]byt
 		return nil, err
 	}
 
-	// TODO: 添加消息处理后的钩子函数
+	// TODO: Add post-message processing hooks
 
 	return response, nil
 }

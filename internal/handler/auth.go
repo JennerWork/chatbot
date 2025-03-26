@@ -8,25 +8,25 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// LoginRequest 登录请求参数
+// LoginRequest login request parameters
 type LoginRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6"`
 }
 
-// TokenResponse token响应
+// TokenResponse token response
 type TokenResponse struct {
 	Token string `json:"token"`
 }
 
-// Login 登录处理器
+// Login login handler
 func Login(authService service.AuthService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req LoginRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, ErrorResponse{
 				Code:    400,
-				Message: "无效的请求参数",
+				Message: "Invalid request parameters",
 				Error:   err.Error(),
 			})
 			return
@@ -35,11 +35,11 @@ func Login(authService service.AuthService) gin.HandlerFunc {
 		token, err := authService.Login(req.Email, req.Password)
 		if err != nil {
 			status := http.StatusInternalServerError
-			message := "登录失败"
+			message := "Login failed"
 
 			if err == service.ErrInvalidCredentials {
 				status = http.StatusUnauthorized
-				message = "邮箱或密码错误"
+				message = "Incorrect email or password"
 			}
 
 			c.JSON(status, ErrorResponse{
@@ -56,7 +56,7 @@ func Login(authService service.AuthService) gin.HandlerFunc {
 	}
 }
 
-// RefreshToken token刷新处理器
+// RefreshToken token refresh handler
 func RefreshToken(authService service.AuthService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 从请求头获取token
@@ -64,7 +64,7 @@ func RefreshToken(authService service.AuthService) gin.HandlerFunc {
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, ErrorResponse{
 				Code:    401,
-				Message: "未提供认证token",
+				Message: "Authentication token not provided",
 			})
 			return
 		}
@@ -74,7 +74,7 @@ func RefreshToken(authService service.AuthService) gin.HandlerFunc {
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			c.JSON(http.StatusUnauthorized, ErrorResponse{
 				Code:    401,
-				Message: "无效的token格式",
+				Message: "Invalid token format",
 			})
 			return
 		}
@@ -83,15 +83,15 @@ func RefreshToken(authService service.AuthService) gin.HandlerFunc {
 		newToken, err := authService.RefreshToken(parts[1])
 		if err != nil {
 			status := http.StatusInternalServerError
-			message := "刷新token失败"
+			message := "Failed to refresh token"
 
 			switch err {
 			case service.ErrTokenExpired:
 				status = http.StatusUnauthorized
-				message = "token已过期"
+				message = "Token expired"
 			case service.ErrInvalidToken:
 				status = http.StatusUnauthorized
-				message = "无效的token"
+				message = "Invalid token"
 			}
 
 			c.JSON(status, ErrorResponse{

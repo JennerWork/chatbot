@@ -8,29 +8,29 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// MessageHandler 消息相关的处理器
+// MessageHandler message-related handler
 type MessageHandler struct {
 	queryService service.MessageQueryService
 }
 
-// NewMessageHandler 创建消息处理器
+// NewMessageHandler create message handler
 func NewMessageHandler(queryService service.MessageQueryService) *MessageHandler {
 	return &MessageHandler{
 		queryService: queryService,
 	}
 }
 
-// GetMessageHistory 获取消息历史
-// @Summary 获取聊天历史
-// @Description 获取当前认证用户的聊天历史记录
+// GetMessageHistory get message history
+// @Summary Get Chat History
+// @Description Get chat history records of the currently authenticated user
 // @Tags messages
 // @Accept json
 // @Produce json
-// @Param session_id query uint false "会话ID"
-// @Param start_time query string false "开始时间 (格式: 2006-01-02 15:04:05)"
-// @Param end_time query string false "结束时间 (格式: 2006-01-02 15:04:05)"
-// @Param page query int false "页码 (默认: 1)"
-// @Param page_size query int false "每页数量 (默认: 20)"
+// @Param session_id query uint false "Session ID"
+// @Param start_time query string false "Start Time (format: 2006-01-02 15:04:05)"
+// @Param end_time query string false "End Time (format: 2006-01-02 15:04:05)"
+// @Param page query int false "Page Number (default: 1)"
+// @Param page_size query int false "Page Size (default: 20)"
 // @Success 200 {object} service.MessageQueryResult
 // @Failure 400 {object} ErrorResponse
 // @Failure 401 {object} ErrorResponse
@@ -41,7 +41,7 @@ func (h *MessageHandler) GetMessageHistory(c *gin.Context) {
 	if err := c.ShouldBindQuery(&params); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Code:    400,
-			Message: "无效的请求参数",
+			Message: "Invalid request parameters",
 			Error:   err.Error(),
 		})
 		return
@@ -52,7 +52,7 @@ func (h *MessageHandler) GetMessageHistory(c *gin.Context) {
 	if customerID == 0 {
 		c.JSON(http.StatusUnauthorized, ErrorResponse{
 			Code:    401,
-			Message: "未认证的用户",
+			Message: "Unauthorized user",
 		})
 		return
 	}
@@ -66,14 +66,14 @@ func (h *MessageHandler) GetMessageHistory(c *gin.Context) {
 		params.PageSize = 20
 	}
 	if params.PageSize > 100 {
-		params.PageSize = 100 // 限制最大页面大小
+		params.PageSize = 100 // Limit maximum page size
 	}
 
 	result, err := h.queryService.GetMessageHistory(params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Code:    500,
-			Message: "获取消息历史失败",
+			Message: "Failed to get message history",
 			Error:   err.Error(),
 		})
 		return
